@@ -9,6 +9,8 @@ int sgl = 8;
 int fan = 9;
 int pil = A0;
 int volham = 0.0;
+int xisw = A1;
+int xiswd;
 IRrecv irrecv(3);
 decode_results results;
 //buası 
@@ -35,7 +37,7 @@ void setup()
 void loop()
 {
   volham = analogRead(pil);
-  Serial.println(volham);
+  xiswd = digitalRead(xisw);
   delay(500);
   if (irrecv.decode(&results))
   {    
@@ -82,13 +84,15 @@ void loop()
     }
     irrecv.resume();
   }
-if(volham < 760){
+  if(xiswd == 1){
+if(volham < 800){
   analogWrite(fan, 0);
   digitalWrite(h1l, LOW);
   digitalWrite(h2l, LOW);
   digitalWrite(h3l, LOW);
   digitalWrite(htl, LOW);
   uyari();
+}
 }
 }
 void singal() {
