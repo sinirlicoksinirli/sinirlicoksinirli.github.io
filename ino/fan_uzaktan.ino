@@ -1,180 +1,146 @@
-// bu kodu yusuf fidan yazmıştır çalmak yaasaktır
-#include <IRremote.h>
+#include <IRremote.h> //ir remote kütüphanesi ekleniyor
+//gerekli pinler isimlendirliyor
+int RECV_PIN = 3 ;
+int buz = 4 ;
+int fan = 9 ;
 int h1l = 10;
 int h2l = 11;
 int h3l = 12;
 int htl = 13;
-int abuzer = 4;
 int sgl = 8;
-int fan = 9;
 int pil = A0;
-int volham = 0.0;
 int xisw = A1;
 int xiswd;
 int iscsensor = A2;
-int autocd;
-IRrecv irrecv(3);
+int autocool;
+int autocl = A3;
+
+IRrecv irrecv(RECV_PIN);
+
 decode_results results;
-//buası
-#define BUTON1 0xE0E020DF
-#define BUTON2 0xAD586662
-#define BUTON3 0x273009C4
-#define BUTON4 0xE0E010EF
-#define BUTON0 0xDFFB419D
-#define AUTOCOOL 0xC7A5B6A3
+#define kapa 0xE0E08877//tuşların hexdecimal kodları kaydediliyor
+#define bir 0xE0E020DF
+#define iki 0xE0E0A05F
+#define uc 0xE0E0609F
+#define turbo 0xE0E010EF
+
 void setup()
 {
   Serial.begin(9600);
-  pinMode(pil , INPUT);
+
+  irrecv.enableIRIn(); // ir sesörü aktif et
+  pinMode(buz, OUTPUT); //outputlar ayarlanıyor
+  pinMode(fan, OUTPUT);
   pinMode(h1l, OUTPUT);
   pinMode(h2l, OUTPUT);
   pinMode(h3l, OUTPUT);
   pinMode(htl, OUTPUT);
-  pinMode(abuzer, OUTPUT);
-  pinMode(sgl, OUTPUT);
-  pinMode(fan, OUTPUT);
-  irrecv.enableIRIn();
 
 }
 
-void loop()
-{
-  
-  volham = analogRead(pil);
-  xiswd = digitalRead(xisw);
-  delay(500);
+void loop() {
+  autocool = digitalRead(autocl); // aotocool butonundan veriler okunuyor
+  //********** ısı ölçüm *****************
   int okunan_deger = analogRead(iscsensor);
   int sicaklik_gerilim = (okunan_deger / 1023.0) * 5000;
   int sicaklik = sicaklik_gerilim / 10.0;
-  Serial.println(results.value, HEX);
-  if (irrecv.decode(&results))
-  {
-    if (autocd == 1 ) {
-      if (results.value == BUTON0) {
-        singal();
-        analogWrite(fan, 0);
-        digitalWrite(h1l, LOW);
-        digitalWrite(h2l, LOW);
-        digitalWrite(h3l, LOW);
-        digitalWrite(htl, LOW);
-        autocd = 0;
-        muz();
-
-      }
-      if (results.value == BUTON1) {
-        singal();
-        analogWrite(fan, 100);
-        digitalWrite(h1l, HIGH);
-        digitalWrite(h2l, LOW);
-        digitalWrite(h3l, LOW);
-        digitalWrite(htl, LOW);
-      }
-      if (results.value == BUTON2) {
-        singal();
-        analogWrite(fan, 150);
-        digitalWrite(h1l, LOW);
-        digitalWrite(h2l, HIGH);
-        digitalWrite(h3l, LOW);
-        digitalWrite(htl, LOW);
-      }
-      if (results.value == BUTON3) {
-        singal();
-        analogWrite(fan, 200);
-        digitalWrite(h1l, LOW);
-        digitalWrite(h2l, LOW);
-        digitalWrite(h3l, HIGH);
-        digitalWrite(htl, LOW);
-      }
-      if (results.value == BUTON4) {
-        singal();
-        analogWrite(fan, 255);
-        digitalWrite(h1l, LOW);
-        digitalWrite(h2l, LOW);
-        digitalWrite(h3l, LOW);
-        digitalWrite(htl, HIGH);
-      }
-      irrecv.resume();
+  //********** ısı ölçüm *****************
+  Serial.println(sicaklik);
+  if (autocool == 1) { //autocool işlemi başaltılıyor
+      if (sicaklik == -1 ) { // fanı durdur
+      analogWrite(fan , 0);
+      hiz0();
+      nane();
+    }
+    if (sicaklik < 27) { //fanı 1. hızda çalıştır
+      analogWrite(fan , 100);
+      hiz1();
+      nane();
+    }
+    if (sicaklik > 28) { //fanı 2. hızda çalıştır
+      analogWrite(fan , 150);
+      hiz2();
+      nane();
+    }
+    if (sicaklik > 29) { //fanı 3. hızda çalıştır
+      analogWrite(fan , 200);
+      hiz3();
+      nane();
+    }
+    if (sicaklik > 30) { //fanı turbo hızda çalıştır
+      analogWrite(fan , 255);
+      hizt();
+      nane();
     }
   }
-  if (results.value == AUTOCOOL) {
-    if (sicaklik > 30) {
-      analogWrite(fan, 255);
-      digitalWrite(h1l, LOW);
-      digitalWrite(h2l, LOW);
-      digitalWrite(h3l, LOW);
-      digitalWrite(htl, HIGH);
+  if (irrecv.decode(&results)) {// eğer bir sinyal algılanırsa
+    Serial.println(results.value, HEX);
+    if (results.value == kapa) { // fanı durdur
+      analogWrite(fan , 0);
+      hiz0();
+      nane();
+    }
+    if (results.value == bir) { //fanı 1. hızda çalıştır
+      analogWrite(fan , 100);
+      hiz1();
+      nane();
+    }
+    if (results.value == iki) { //fanı 2. hızda çalıştır
+      analogWrite(fan , 150);
+      hiz2();
+      nane();
+    }
+    if (results.value == uc) { //fanı 3. hızda çalıştır
+      analogWrite(fan , 200);
+      hiz3();
+      nane();
+    }
+    if (results.value == turbo) { //fanı turbo hızda çalıştır
+      analogWrite(fan , 255);
+      hizt();
+      nane();
     }
 
-    if (sicaklik > 29) {
-      analogWrite(fan, 200);
-      digitalWrite(h1l, LOW);
-      digitalWrite(h2l, LOW);
-      digitalWrite(h3l, HIGH);
-      digitalWrite(htl, LOW);
-    }
+
+
+    irrecv.resume(); // işlem bittiten sonra diğer sinyalleri ara
   }
 
-  if (sicaklik > 28) {
-    analogWrite(fan, 150);
-    digitalWrite(h1l, LOW);
-    digitalWrite(h2l, LOW);
-    digitalWrite(h3l, HIGH);
-    digitalWrite(htl, LOW);
-  }
-  if (sicaklik < 27) {
-    analogWrite(fan , 100);
-    digitalWrite(h1l, HIGH);
-    digitalWrite(h2l, LOW);
-    digitalWrite(h3l, LOW);
-    digitalWrite(htl, LOW);
-  }
-
-if (xiswd == 1) {
-  if (volham < 800) {
-    analogWrite(fan, 0);
-    digitalWrite(h1l, LOW);
-    digitalWrite(h2l, LOW);
-    digitalWrite(h3l, LOW);
-    digitalWrite(htl, LOW);
-    uyari();
-  }
 }
+void nane () { // bip sesini fonksiyon haline getiriyoruz
+  digitalWrite(buz, HIGH);
+  delay(100);
+  digitalWrite(buz, LOW);
 }
-void singal() {
-  digitalWrite(sgl, HIGH);
-  digitalWrite(abuzer, HIGH);
-  delay(200);
-  digitalWrite(sgl, LOW);
-  digitalWrite(abuzer, LOW);
+void hiz1 (){
+  digitalWrite(h1l,HIGH);
+  digitalWrite(h2l,LOW);
+  digitalWrite(h3l,LOW);
+  digitalWrite(htl,LOW);  
 }
-void uyari() {
-
-  digitalWrite(abuzer, HIGH);
-  delay(200);
-
-  digitalWrite(abuzer, LOW);
+void hiz2 (){
+  digitalWrite(h1l,LOW);
+  digitalWrite(h2l,HIGH);
+  digitalWrite(h3l,LOW);
+  digitalWrite(htl,LOW);  
 }
-void muz () {
-  digitalWrite(abuzer , HIGH);
-  delay(100);
-  digitalWrite(abuzer , LOW);
-  delay(100);
-  digitalWrite(abuzer , HIGH);
-  delay(100);
-  digitalWrite(abuzer , LOW);
-  delay(100);
-  digitalWrite(abuzer , HIGH);
-  delay(100);
-  digitalWrite(abuzer , LOW);
-  delay(500);
-  digitalWrite(abuzer , HIGH);
-  delay(300);
-  digitalWrite(abuzer , LOW);
-  delay(300);
-  digitalWrite(abuzer , HIGH);
-  delay(300);
-  digitalWrite(abuzer , LOW);
-  delay(100);
-
-
+void hiz3 (){
+  digitalWrite(h1l,LOW);
+  digitalWrite(h2l,LOW);
+  digitalWrite(h3l,HIGH);
+  digitalWrite(htl,LOW);  
 }
+void hizt (){
+  digitalWrite(h1l,LOW);
+  digitalWrite(h2l,LOW);
+  digitalWrite(h3l,LOW);
+  digitalWrite(htl,HIGH);  
+}
+
+void hiz0 (){
+  digitalWrite(h1l,LOW);
+  digitalWrite(h2l,LOW);
+  digitalWrite(h3l,LOW);
+  digitalWrite(htl,LOW);  
+}
+
